@@ -1,5 +1,6 @@
 import h from 'virtual-dom/h'
 import refsStack from './refs-stack'
+import componentsMap from './components-map'
 
 export default function dom (tag, properties, ...children) {
   if (typeof tag === 'function') {
@@ -23,9 +24,13 @@ class ComponentWidget {
       this.key = this.properties.key
     }
   }
-
   init () {
     this.component = new this.constructor(this.properties, this.children)
+    if (this.properties && this.properties.key && this.component) {
+      componentsMap.set(this.constructor.name + '_' + this.properties.key, this.component)
+    } else {
+      console.error('ComponentWidget: component or component key not found');
+    }
     if (this.properties && this.properties.ref && refsStack.length > 0) {
       refsStack[refsStack.length - 1][this.properties.ref] = this.component
     }
@@ -41,6 +46,10 @@ class ComponentWidget {
 
     if (this.properties && this.properties.ref) {
       newRef = this.properties.ref
+    }
+
+    if (this.constructor === oldWidget.constructor && typeof oldWidget.component === 'undefined') {
+      oldWidget.component = componentsMap.get(this.constructor.name + '_' + this.properties.key)
     }
 
     if (this.constructor === oldWidget.constructor && typeof oldWidget.component.update === 'function') {
